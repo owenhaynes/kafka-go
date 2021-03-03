@@ -418,9 +418,6 @@ func (g *Generation) heartbeatLoop(interval time.Duration) {
 		g.log(func(l Logger) {
 			l.Printf("started heartbeat for group, %v [%v]", g.GroupID, interval)
 		})
-		defer g.log(func(l Logger) {
-			l.Printf("stopped heartbeat for group %s\n", g.GroupID)
-		})
 
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
@@ -428,6 +425,9 @@ func (g *Generation) heartbeatLoop(interval time.Duration) {
 		for {
 			select {
 			case <-ctx.Done():
+				g.log(func(l Logger) {
+					l.Printf("stopped heartbeat for group %s\n", g.GroupID)
+				})
 				return
 			case <-ticker.C:
 				_, err := g.conn.heartbeat(heartbeatRequestV0{
@@ -436,6 +436,9 @@ func (g *Generation) heartbeatLoop(interval time.Duration) {
 					MemberID:     g.MemberID,
 				})
 				if err != nil {
+					g.log(func(l Logger) {
+						l.Printf("stopped heartbeat for group %s, because of %s\n", g.GroupID, err)
+					})
 					return
 				}
 			}
